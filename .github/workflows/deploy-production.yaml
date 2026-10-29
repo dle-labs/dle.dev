@@ -41,9 +41,9 @@ jobs:
 
       - name: Publish Web App
         id: deploy
-        uses: cloudflare/wrangler-action@v3
+        uses: ./.github/actions/pages-deploy
         with:
-          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
-          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
-          command: pages deploy ./.svelte-kit/cloudflare --project-name=dle-dev --branch=master
-          packageManager: pnpm
+          account-id: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          api-token: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          branch: master
+          project-name: dle-dev

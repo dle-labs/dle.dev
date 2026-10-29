@@ -1,0 +1,94 @@
+name: Deploy Pages
+description: Deploy a Cloudflare Pages build and expose the deployment URLs
+
+inputs:
+  account-id:
+    description: Cloudflare account ID
+    required: true
+  api-token:
+    description: Cloudflare API token
+    required: true
+  branch:
+    description: Branch name to attach to the deployment
+    required: true
+  directory:
+    default: ./.svelte-kit/cloudflare
+    description: Directory to deploy
+    required: false
+  project-name:
+    description: Cloudflare Pages project name
+    required: true
+
+outputs:
+  deployment-url:
+    description: URL of the deployed Pages site
+    value: ${{ steps.deploy.outputs.deployment-url }}
+  pages-deployment-alias-url:
+    description: Alias URL for preview deployments when available
+    value: ${{ steps.deploy.outputs.pages-deployment-alias-url }}
+  pages-deployment-id:
+    description: Cloudflare Pages deployment ID when available
+    value: ${{ steps.deploy.outputs.pages-deployment-id }}
+  pages-environment:
+    description: Cloudflare Pages deployment environment when available
+    value: ${{ steps.deploy.outputs.pages-environment }}
+
+runs:
+  using: composite
+  steps:
+    - id: deploy
+      name: Deploy Pages
+      shell: bash
+      env:
+        CLOUDFLARE_ACCOUNT_ID: ${{ inputs.account-id }}
+        CLOUDFLARE_API_TOKEN: ${{ inputs.api-token }}
+        DEPLOY_BRANCH: ${{ inputs.branch }}
+        DEPLOY_DIRECTORY: ${{ inputs.directory }}
+        DEPLOY_PROJECT_NAME: ${{ inputs.project-name }}
+      run: |
+        set -euo pipefail
+
+        output_dir="$(mktemp -d)"
+        export WRANGLER_OUTPUT_FILE_DIRECTORY="$output_dir"
+
+        pnpm wrangler pages deploy "$DEPLOY_DIRECTORY" \
+          --project-name="$DEPLOY_PROJECT_NAME" \
+          --branch="$DEPLOY_BRANCH"
+
+        artifact="$(find "$output_dir" -maxdepth 1 -type f -name 'wrangler-output-*.json' | head -n 1)"
+
+        if [ -z "$artifact" ]; then
+          echo "Wrangler deployment output was not written" >&2
+          exit 1
+        fi
+
+        ARTIFACT_PATH="$artifact" GITHUB_OUTPUT_FILE="$GITHUB_OUTPUT" node --input-type=module <<'EOF'
+        import fs from 'node:fs';
+
+        const output = JSON.parse(fs.readFileSync(process.env.ARTIFACT_PATH, 'utf8'));
+        const entry = output?.type === 'pages-deploy-detailed'
+          ? output
+          : Array.isArray(output)
+            ? output.find((item) => item?.type === 'pages-deploy-detailed')
+            : undefined;
+
+        if (!entry?.url) {
+          throw new Error('Pages deployment URL not found in Wrangler output');
+        }
+
+        const lines = [`deployment-url=${entry.url}`];
+
+        if (entry.alias) {
+          lines.push(`pages-deployment-alias-url=${entry.alias}`);
+        }
+
+        if (entry.deployment_id) {
+          lines.push(`pages-deployment-id=${entry.deployment_id}`);
+        }
+
+        if (entry.environment) {
+          lines.push(`pages-environment=${entry.environment}`);
+        }
+
+        fs.appendFileSync(process.env.GITHUB_OUTPUT_FILE, `${lines.join('\n')}\n`);
+        EOF
