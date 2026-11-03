@@ -1,4 +1,4 @@
-# This is a basic workflow to automatically build a Svelte app and deploy it to GitHub Pages
+# Verify changes and upload a preview version of the staging Worker
 
 concurrency:
   cancel-in-progress: true
@@ -54,7 +54,7 @@ jobs:
   publish-web-app:
     environment:
       name: Previews
-      url: ${{ steps.deploy.outputs.pages-deployment-alias-url || steps.deploy.outputs.deployment-url }}
+      url: ${{ steps.deploy.outputs.deployment-url }}
     name: Deploy Webapp
     needs: [changesets, lint, verify]
     runs-on: ubuntu-latest
@@ -80,7 +80,7 @@ jobs:
         with:
           accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
           apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
-          command: pages deploy ./.svelte-kit/cloudflare --project-name=dle-dev-staging --branch=${{ github.head_ref }}
+          command: versions upload --env staging --preview-alias pr-${{ github.event.pull_request.number || github.run_id }}
           packageManager: pnpm
   verify:
     name: Verify
@@ -99,6 +99,11 @@ jobs:
       - name: Verify
         run: |
           pnpm run check
+
+      - name: Validate Workers deployment bundles
+        run: |
+          pnpm run build
+          pnpm run cf:check
 
 name: Pull Request
 

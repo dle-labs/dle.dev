@@ -13,8 +13,10 @@
     "lint": "prettier --check . && eslint .",
     "lint:fix": "prettier --write . && eslint . --fix",
     "format": "prettier --write .",
-    "preview": "wrangler pages dev ./.svelte-kit/cloudflare",
-    "cf:prod": "pnpm wrangler pages deploy --branch master",
+    "preview": "wrangler dev",
+    "cf:prod": "wrangler deploy --env \"\"",
+    "cf:staging": "wrangler deploy --env staging",
+    "cf:check": "wrangler deploy --env \"\" --dry-run && wrangler deploy --env staging --dry-run",
     "bnd": "pnpm build && pnpm cf:prod",
     "release": "pnpm changeset version && pnpm install --no-frozen-lockfile && pnpm build",
     "version": "changeset version"
