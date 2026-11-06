@@ -1,5 +1,16 @@
 # Changelog
 
+## 2.4.0
+
+### Minor Changes
+
+- b5b7a5f: Extract shared section intro and resume timeline components so the home page sections reuse a smaller, more consistent UI structure with less duplicated Svelte markup.
+- b5b7a5f: Introduce a reusable Typography system for headings, paragraphs, spans, and rich prose wrappers so text styling stays more consistent across the home page, navigation, and blog content.
+
+### Patch Changes
+
+- b5b7a5f: Rename the GitHub deployment environments to Production, Staging, and Previews while keeping staging and branch previews on the `dle-dev-staging` Cloudflare Pages project without duplicate Cloudflare deployment records in the GitHub UI.
+
 ## 2.3.0
 
 ### Minor Changes
