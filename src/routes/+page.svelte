@@ -17,10 +17,9 @@
 
 <main class="relative isolate min-h-svh px-4 pt-32 pb-10 sm:px-6 sm:pt-36 lg:px-8">
   <HomeHeroSection />
-
+  <HomeAboutSection />
   <SkillsSection />
   <WorkExperienceSection />
   <EducationSection />
   <CertificatesSection />
-  <HomeAboutSection />
 </main>

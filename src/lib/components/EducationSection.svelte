@@ -114,7 +114,7 @@
     <SectionIntro
       id="education"
       eyebrow="Academic path"
-      title="Education"
+      title="Where I learned"
       description="The academic track behind the way I work today, spanning economics, business, and software engineering."
     />
 

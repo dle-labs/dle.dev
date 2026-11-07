@@ -74,17 +74,53 @@
       <SectionIntro
         id="skills"
         eyebrow="Capability map"
-        title="Skills"
+        title="What I’m really good at"
         description="A working stack shaped by frontend systems, platform delivery, architecture discipline, and the tools that keep execution sharp."
       />
     </div>
 
     <div
-      class="mt-12 grid gap-12 lg:mt-16 lg:grid-cols-[minmax(0,26rem)_minmax(0,1fr)] lg:items-start lg:gap-20"
+      class="mt-10 grid gap-10 lg:mt-12 lg:grid-cols-[minmax(0,1fr)_17rem] lg:items-center lg:gap-14"
     >
-      <div class="relative" data-skills-cloud>
+      <div class="grid gap-x-10 gap-y-7 sm:grid-cols-2">
+        {#each skillGroups as group (group.name)}
+          <section
+            class="border-t border-black/10 pt-4 dark:border-white/12"
+            data-skills-group
+            style:--skills-group-order={skillGroups.indexOf(group)}
+          >
+            <Typography
+              as="h3"
+              variant="card-title-sm"
+              id={getSkillGroupId(group.name)}
+              class="text-[1rem] tracking-[-0.02em] sm:text-[1.05rem]"
+            >
+              <a
+                href={`#${getSkillGroupId(group.name)}`}
+                class="underline-offset-4 hover:underline focus-visible:underline"
+              >
+                {group.name}
+              </a>
+            </Typography>
+
+            <div class="mt-3 flex flex-wrap gap-2">
+              {#each group.keywords as keyword (keyword)}
+                <Typography
+                  as="span"
+                  variant="chip"
+                  class="inline-flex items-center rounded-full border border-black/8 bg-black/[0.025] px-2.5 py-1 text-[0.8rem] leading-5 text-foreground/84 dark:border-white/10 dark:bg-white/[0.03] dark:text-white/86"
+                >
+                  {keyword}
+                </Typography>
+              {/each}
+            </div>
+          </section>
+        {/each}
+      </div>
+
+      <div class="relative mx-auto w-full max-w-[14rem] lg:max-w-none" data-skills-cloud>
         <div
-          class="relative mx-auto aspect-square w-full max-w-[26rem] overflow-hidden rounded-[2rem] border border-black/8 bg-[radial-gradient(circle_at_center,rgba(255,255,255,0.88)_0%,rgba(255,255,255,0.42)_42%,transparent_72%)] shadow-[0_30px_90px_-48px_rgba(15,23,42,0.42)] dark:border-white/10 dark:bg-[radial-gradient(circle_at_center,rgba(255,255,255,0.08)_0%,rgba(255,255,255,0.03)_42%,transparent_72%)]"
+          class="relative mx-auto aspect-square w-full max-w-[17rem] overflow-hidden rounded-[2rem] border border-black/8 bg-[radial-gradient(circle_at_center,rgba(255,255,255,0.88)_0%,rgba(255,255,255,0.42)_42%,transparent_72%)] shadow-[0_30px_90px_-48px_rgba(15,23,42,0.42)] dark:border-white/10 dark:bg-[radial-gradient(circle_at_center,rgba(255,255,255,0.08)_0%,rgba(255,255,255,0.03)_42%,transparent_72%)]"
         >
           <div
             class="pointer-events-none absolute inset-[14%] rounded-full border border-black/6 dark:border-white/10"
@@ -103,44 +139,6 @@
           <div class="absolute inset-0 flex items-center justify-center">
             <IconCloud images={cloudImages} class="size-full" />
           </div>
-        </div>
-      </div>
-
-      <div>
-        <div class="space-y-8">
-          {#each skillGroups as group (group.name)}
-            <section
-              class="border-t border-black/10 pt-5 sm:pt-6 dark:border-white/12"
-              data-skills-group
-              style:--skills-group-order={skillGroups.indexOf(group)}
-            >
-              <Typography
-                as="h3"
-                variant="card-title-sm"
-                id={getSkillGroupId(group.name)}
-                class="text-[1.08rem] tracking-[-0.02em] sm:text-[1.2rem]"
-              >
-                <a
-                  href={`#${getSkillGroupId(group.name)}`}
-                  class="underline-offset-4 hover:underline focus-visible:underline"
-                >
-                  {group.name}
-                </a>
-              </Typography>
-
-              <div class="mt-4 flex flex-wrap gap-2.5">
-                {#each group.keywords as keyword (keyword)}
-                  <Typography
-                    as="span"
-                    variant="chip"
-                    class="inline-flex items-center rounded-full border border-black/8 bg-black/[0.025] px-3 py-1.5 text-sm leading-5 text-foreground/84 transition-colors duration-200 dark:border-white/10 dark:bg-white/[0.03] dark:text-white/86"
-                  >
-                    {keyword}
-                  </Typography>
-                {/each}
-              </div>
-            </section>
-          {/each}
         </div>
       </div>
     </div>

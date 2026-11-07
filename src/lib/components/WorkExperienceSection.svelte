@@ -220,7 +220,7 @@
     <SectionIntro
       id="work-experience"
       eyebrow="Career timeline"
-      title="Work Experience"
+      title="Where I work(ed)"
       description="A role-by-role view of the systems, products, and teams I have shaped, ordered from the current frontier back through the work that built it."
     />
 

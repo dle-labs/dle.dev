@@ -2,17 +2,13 @@
   import Typography from '$lib/components/Typography.svelte';
 </script>
 
-<section aria-labelledby="about-me" class="mx-auto max-w-6xl px-4 py-20 sm:mt-8 sm:px-6 lg:px-8">
+<section aria-labelledby="about-me" class="mx-auto mt-10 max-w-6xl px-4 sm:mt-12 sm:px-6 lg:px-8">
   <div class="relative">
-    <div
-      class="section-glow pointer-events-none absolute -inset-x-4 -inset-y-3 rounded-[2.5rem] sm:-inset-x-6 sm:-inset-y-4 lg:-inset-x-8 lg:-inset-y-5"
-    ></div>
-
-    <div class="relative z-10 pt-3 pb-7 sm:pt-4 sm:pb-8 lg:pt-5 lg:pb-12">
+    <div class="relative z-10">
       <div
-        class="grid gap-8 lg:grid-cols-[minmax(0,22rem)_minmax(0,1fr)] lg:items-stretch lg:gap-12"
+        class="grid gap-8 lg:grid-cols-[minmax(0,1fr)_minmax(0,22rem)] lg:items-stretch lg:gap-12"
       >
-        <div class="relative lg:h-full">
+        <div class="relative lg:col-start-2 lg:row-start-1 lg:h-full">
           <div
             class="overflow-hidden rounded-[1.8rem] border border-black/8 shadow-[0_28px_70px_-42px_rgba(15,23,42,0.45)] lg:h-full dark:border-white/10"
           >
@@ -27,7 +23,7 @@
           </div>
         </div>
 
-        <div class="max-w-3xl">
+        <div class="max-w-3xl lg:col-start-1 lg:row-start-1">
           <Typography as="h2" variant="section-title-compact" id="about-me">
             <a href="#about-me" class="underline-offset-4 hover:underline focus-visible:underline">
               Life outside the editor.
@@ -57,13 +53,3 @@
     </div>
   </div>
 </section>
-
-<style>
-  .section-glow {
-    border: 1px solid color-mix(in oklab, var(--color-primary) 10%, transparent);
-    box-shadow:
-      inset 0 0 0 1px color-mix(in oklab, var(--color-foreground) 4%, transparent),
-      0 0 44px -28px color-mix(in oklab, var(--color-primary) 24%, transparent),
-      0 24px 90px -60px color-mix(in oklab, var(--color-primary) 18%, transparent);
-  }
-</style>
