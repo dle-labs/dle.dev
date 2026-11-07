@@ -13,6 +13,7 @@
   import resume from '$lib/assets/resume/resume.json';
   import SectionIntro from '$lib/components/SectionIntro.svelte';
   import Typography from '$lib/components/Typography.svelte';
+  import ResumeTimeline from '$lib/components/resume/ResumeTimeline.svelte';
   import ResumeTimelineBulletList from '$lib/components/resume/ResumeTimelineBulletList.svelte';
   import ResumeTimelineEntry from '$lib/components/resume/ResumeTimelineEntry.svelte';
   import ResumeTimelineMedia from '$lib/components/resume/ResumeTimelineMedia.svelte';
@@ -241,7 +242,7 @@
           />
 
           <div class="relative mt-8 lg:mt-10">
-            <div class="resume-timeline">
+            <ResumeTimeline>
               {#each group.entries as entry (entry.id)}
                 <ResumeTimelineEntry reversed={entry.isReversed} icon={Award}>
                   {#snippet media()}
@@ -312,7 +313,7 @@
                   </div>
                 </ResumeTimelineEntry>
               {/each}
-            </div>
+            </ResumeTimeline>
           </div>
         </section>
       {/each}
