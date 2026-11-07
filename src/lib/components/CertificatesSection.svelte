@@ -55,12 +55,19 @@
         'Deepened architecture-level thinking around security, threat surfaces, and resilient web systems.'
       ]
     },
-    'CPSA® Advanced Level CLOUDINFRA|2026-09-15': {
+    'CPSA® Advanced Level CLOUDINFRA|2026-12-09': {
       image: cloud,
       summary:
         'Advanced architecture coursework focused on cloud infrastructure and modern platform concerns.',
       details: [
         'Strengthened the platform and infrastructure perspective behind scalable software architecture decisions.'
+      ]
+    },
+    'Kubernetes PaaS Cluster Design Guide|2026-08-24': {
+      image: kube,
+      summary: 'Internal ti&m training on designing Kubernetes clusters that run as a shared PaaS.',
+      details: [
+        'Covered how to separate teams on one cluster, where to put guardrails, and how to keep it manageable day to day.'
       ]
     },
     'Introduction to Quarkus|2026-06-15': {
@@ -70,7 +77,7 @@
         'Expanded backend platform familiarity beyond the frontend-heavy delivery work shown elsewhere in the portfolio.'
       ]
     },
-    'Kubernetes CKAD Certification|2026-05-15': {
+    'Kubernetes CKAD Certification|2026-12-20': {
       image: kube,
       summary:
         'Hands-on certification validating day-to-day Kubernetes application design and deployment skills.',
