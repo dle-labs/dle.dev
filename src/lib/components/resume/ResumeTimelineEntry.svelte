@@ -88,7 +88,9 @@
       bind:this={mediaEl}
       style={initialMediaStyle}
       class={cn(
-        'hidden lg:row-start-1 lg:flex lg:items-center',
+        // Centred rather than stretched: its auto height stays the media's own height, so the
+        // open/close tween ends exactly where layout puts it while the card grows beside it.
+        'hidden lg:row-start-1 lg:flex lg:items-center lg:self-center',
         reversed ? 'lg:col-start-1 lg:justify-end' : 'lg:col-start-2 lg:justify-start'
       )}
     >
