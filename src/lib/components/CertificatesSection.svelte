@@ -65,10 +65,9 @@
     },
     'Kubernetes PaaS Cluster Design Guide|2026-08-24': {
       image: kube,
-      summary:
-        'Internal training on designing Kubernetes-based platform-as-a-service clusters for enterprise workloads.',
+      summary: 'Internal ti&m training on designing Kubernetes clusters that run as a shared PaaS.',
       details: [
-        'Deepened the platform design perspective behind multi-tenant cluster topology, isolation, and operational guardrails.'
+        'Covered how to separate teams on one cluster, where to put guardrails, and how to keep it manageable day to day.'
       ]
     },
     'Introduction to Quarkus|2026-06-15': {
