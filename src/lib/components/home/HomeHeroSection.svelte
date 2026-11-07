@@ -4,12 +4,10 @@
   import linkedinIcon from '$lib/assets/icons/linkedin.svg';
   import Typography from '$lib/components/Typography.svelte';
   import { Avatar } from '$lib/components/ui/avatar';
-  import { homeOutcomes, homeSynthesis } from '$lib/content/home';
-  import { getHomeIntro } from '$lib/state/home-intro.svelte';
+  import AuroraText from '$lib/components/AuroraText.svelte';
+  import { homeOpener } from '$lib/content/home';
   import { cn } from '$lib/utils';
   import resume from '../../assets/resume/resume.json';
-
-  import HeroOutcomeStack from './HeroOutcomeStack.svelte';
 
   const profileLinks = resume.basics.profiles
     .filter((p) => p.network === 'Github' || p.network === 'LinkedIn')
@@ -18,11 +16,17 @@
       iconUrl: p.network === 'Github' ? githubIcon : linkedinIcon
     }));
 
-  const intro = getHomeIntro();
+  const bodySegments = splitHighlights(homeOpener.body, homeOpener.bodyHighlights);
 
-  let modeClass = $derived(
-    intro.prefersReducedMotion ? 'mode-reduced' : intro.hasPlayed ? 'mode-sequenced' : 'mode-staged'
-  );
+  function splitHighlights(text: string, highlights: string[]) {
+    const escaped = highlights.map((phrase) => phrase.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'));
+    const pattern = new RegExp(`(${escaped.join('|')})`, 'g');
+
+    return text
+      .split(pattern)
+      .filter(Boolean)
+      .map((part) => ({ text: part, highlighted: highlights.includes(part) }));
+  }
 </script>
 
 <div
@@ -31,99 +35,141 @@
 ></div>
 
 <section class="mx-auto flex max-w-6xl items-start px-4 py-4 sm:px-6 sm:py-6 lg:px-8 lg:py-8">
-  <div data-intro-content class="hero-ledger relative w-full">
-    <div
-      class="section-glow pointer-events-none absolute -inset-x-4 -inset-y-3 rounded-[2.5rem] sm:-inset-x-6 sm:-inset-y-4 lg:-inset-x-8 lg:-inset-y-5"
-    ></div>
-
+  <div data-intro-content class="relative w-full">
     <div class="relative z-10 py-6 sm:py-8 lg:py-12">
-      <div class="grid gap-8 lg:grid-cols-[minmax(0,18rem)_minmax(0,1fr)] lg:items-start lg:gap-12">
-        <div class="min-w-0 lg:justify-self-center lg:pt-2">
-          <div
-            class="flex flex-col items-center gap-4 text-center sm:gap-5 lg:flex-col lg:items-center"
-          >
-            <div class="relative shrink-0">
-              <div
-                class="absolute inset-[-0.4rem] rounded-full border border-black/8 lg:-inset-4 dark:border-white/10"
-              ></div>
-              <div class="absolute inset-[-2.4rem] rounded-full bg-primary/18 blur-2xl"></div>
+      <!-- Two rows shared by both columns: avatar beside the headline, identity beside the
+           paragraph, so the second text blocks always start at the same height. -->
+      <div class="hero-grid">
+        <div class="hero-avatar">
+          <div class="relative shrink-0">
+            <div
+              class="absolute inset-[-0.4rem] rounded-full border border-black/8 sm:-inset-3 lg:-inset-5 dark:border-white/10"
+            ></div>
+            <div
+              class="absolute inset-[-2.4rem] rounded-full bg-primary/18 blur-2xl lg:inset-[-3rem]"
+            ></div>
 
-              <Avatar
-                class="relative size-24 border border-white/75 bg-white shadow-[0_22px_55px_-22px_rgba(15,23,42,0.48)] sm:size-32 dark:border-white/18 dark:bg-black/25"
+            <Avatar
+              class="relative size-28 border border-white/75 bg-white shadow-[0_22px_55px_-22px_rgba(15,23,42,0.48)] sm:size-36 lg:size-44 dark:border-white/18 dark:bg-black/25"
+            >
+              <enhanced:img
+                src={AvatarImg}
+                alt="Portrait of Daniel L. Einars"
+                loading="lazy"
+                decoding="async"
+                data-slot="avatar-image"
+                class={cn('aspect-square size-full rounded-full object-cover')}
               >
-                <enhanced:img
-                  src={AvatarImg}
-                  alt="Portrait of Daniel L. Einars"
-                  loading="lazy"
-                  decoding="async"
-                  data-slot="avatar-image"
-                  class={cn('aspect-square size-full rounded-full object-cover')}
-                >
-                </enhanced:img>
-              </Avatar>
-            </div>
-
-            <div class="min-w-0 text-center lg:text-center">
-              <Typography as="p" variant="eyebrow-wide">Daniel L. Einars</Typography>
-              <Typography as="p" variant="body-strong" class="mt-2 max-w-sm">
-                Engineering quality, design, architecture, and implementation moving in the same
-                direction.
-              </Typography>
-            </div>
+              </enhanced:img>
+            </Avatar>
           </div>
         </div>
 
-        <div class="min-w-0">
-          <div class="relative max-w-4xl">
-            <div class="absolute top-0 right-0 flex items-center gap-2">
-              {#each profileLinks as profile (profile.url)}
-                <a
-                  href={profile.url}
-                  target="_blank"
-                  rel="external noreferrer"
-                  aria-label={profile.network}
-                  title={profile.network}
-                  class={cn(
-                    'inline-flex size-9 items-center justify-center rounded-full',
-                    'border border-black/8 bg-black/[0.03] text-foreground',
-                    'transition-colors duration-200 hover:bg-black/[0.06]',
-                    'dark:border-white/10 dark:bg-white/[0.04] dark:hover:bg-white/[0.08]'
-                  )}
-                >
-                  <img src={profile.iconUrl} alt="" class="size-4 object-contain dark:invert" />
-                </a>
-              {/each}
-            </div>
-
-            <Typography as="p" variant="intro-lead">I help companies</Typography>
-
-            <HeroOutcomeStack outcomes={homeOutcomes} synthesis={homeSynthesis} {modeClass} />
+        <div class="hero-identity min-w-0 text-center">
+          <Typography as="p" variant="eyebrow-wide">Daniel L. Einars</Typography>
+          <Typography as="p" variant="body-strong" class="mt-3 max-w-sm lg:mt-4">
+            Engineering quality, design, architecture, and implementation moving in the same
+            direction.
+          </Typography>
+          <div class="mt-5 flex items-center justify-center gap-2.5 lg:mt-7">
+            {#each profileLinks as profile (profile.url)}
+              <a
+                href={profile.url}
+                target="_blank"
+                rel="external noreferrer"
+                aria-label={profile.network}
+                title={profile.network}
+                class={cn(
+                  'inline-flex size-9 items-center justify-center rounded-full',
+                  'border border-black/8 bg-black/[0.03] text-foreground',
+                  'transition-colors duration-200 hover:bg-black/[0.06]',
+                  'dark:border-white/10 dark:bg-white/[0.04] dark:hover:bg-white/[0.08]'
+                )}
+              >
+                <img src={profile.iconUrl} alt="" class="size-4 object-contain dark:invert" />
+              </a>
+            {/each}
           </div>
         </div>
+
+        <Typography
+          as="h1"
+          variant="hero-title"
+          class="hero-headline max-w-4xl text-[clamp(2rem,4.2vw,3.6rem)] leading-[1.08] tracking-[-0.04em]"
+        >
+          {homeOpener.headlinePrefix}<AuroraText>{homeOpener.headlineHighlight}</AuroraText
+          >{homeOpener.headlineSuffix}
+        </Typography>
+
+        <Typography as="p" variant="body" class="hero-body max-w-2xl sm:leading-8">
+          {#each bodySegments as segment, index (index)}
+            {#if segment.highlighted}
+              <strong class="font-medium text-foreground">{segment.text}</strong>
+            {:else}
+              {segment.text}
+            {/if}
+          {/each}
+        </Typography>
       </div>
     </div>
   </div>
 </section>
 
 <style>
-  .hero-ledger {
-    --step-duration: 5.4s;
-    --active-duration: 6.3s;
-    --settle-delay: calc(var(--step-duration) * 4);
+  .hero-grid {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-areas:
+      'avatar'
+      'identity'
+      'headline'
+      'body';
+    row-gap: 1.5rem;
   }
 
-  .section-glow {
-    border-color: transparent;
-    box-shadow: none;
+  .hero-avatar {
+    grid-area: avatar;
+    justify-self: center;
+  }
+
+  .hero-identity {
+    grid-area: identity;
+    justify-self: center;
+  }
+
+  .hero-grid :global(.hero-headline) {
+    grid-area: headline;
+    margin-top: 1rem;
+  }
+
+  .hero-grid :global(.hero-body) {
+    grid-area: body;
   }
 
   @media (min-width: 1024px) {
-    .section-glow {
-      border: 1px solid color-mix(in oklab, var(--color-primary) 10%, transparent);
-      box-shadow:
-        inset 0 0 0 1px color-mix(in oklab, var(--color-foreground) 4%, transparent),
-        0 0 44px -28px color-mix(in oklab, var(--color-primary) 24%, transparent),
-        0 24px 90px -60px color-mix(in oklab, var(--color-primary) 18%, transparent);
+    .hero-grid {
+      grid-template-columns: minmax(0, 20rem) minmax(0, 1fr);
+      grid-template-areas:
+        'avatar headline'
+        'identity body';
+      column-gap: 4rem;
+      row-gap: 2.25rem;
+    }
+
+    .hero-avatar {
+      align-self: center;
+    }
+
+    .hero-identity {
+      align-self: start;
+    }
+
+    .hero-grid :global(.hero-headline) {
+      margin-top: 0;
+    }
+
+    .hero-grid :global(.hero-body) {
+      align-self: start;
     }
   }
 </style>
