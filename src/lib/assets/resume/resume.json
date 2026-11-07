@@ -233,7 +233,10 @@
       "name": "Platform and Delivery",
       "keywords": [
         "Node.js",
+        "Quarkus",
+        "Camunda",
         "Docker (Compose)",
+        "Podman",
         "Kubernetes",
         "GitLab CI",
         "GitHub Actions",
