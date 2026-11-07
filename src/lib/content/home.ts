@@ -14,3 +14,5 @@ export const homeOpener = {
   body: 'Over seven years in Swiss banking I’ve grown from frontend specialist to full-stack lead across React, SvelteKit, Kotlin/Quarkus, Camunda, and Kubernetes, with a focus on architecture, migrations, and maintainable systems. A background in economics and marketing keeps me close to the business.',
   bodyHighlights: ['React', 'SvelteKit', 'Kotlin/Quarkus', 'Camunda', 'Kubernetes']
 } satisfies HomeOpener;
+
+export const contactEmail = 'hi@dle.dev';

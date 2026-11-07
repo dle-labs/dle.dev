@@ -20,6 +20,7 @@
 
   import Typography from '$lib/components/Typography.svelte';
   import { Button } from '$lib/components/ui/button';
+  import { contactEmail } from '$lib/content/home';
   import { cn } from '$lib/utils';
   import { AnimatedThemeToggler } from './magic/animated-theme-toggler';
 
@@ -37,11 +38,12 @@
   ];
 
   const sectionItems: SectionItem[] = [
+    { href: '/#about-me', label: 'About', icon: UserRound },
     { href: '/#skills', label: 'Skills', icon: Sparkles },
     { href: '/#work-experience', label: 'Work Experience', icon: BriefcaseBusiness },
     { href: '/#education', label: 'Education', icon: GraduationCap },
     { href: '/#certificates', label: 'Certificates', icon: Award },
-    { href: '/#about-me', label: 'About', icon: UserRound }
+    { href: '/#contact', label: 'Contact', icon: Mail }
   ];
 
   const pathname = $derived(page.url.pathname);
@@ -369,7 +371,7 @@
           </button>
 
           <a
-            href="mailto:hi@dle.dev"
+            href={`mailto:${contactEmail}`}
             class={cn(contactLinkClass, 'hidden min-[930px]:inline-flex')}
           >
             <Mail class={navbarIconClass} />
@@ -454,7 +456,7 @@
                 class={cn('mobile-nav-item', isMenuOpen && 'mobile-nav-item-open')}
               >
                 <a
-                  href="mailto:hi@dle.dev"
+                  href={`mailto:${contactEmail}`}
                   class={cn(contactLinkClass, 'w-full justify-center')}
                   onclick={closeMenu}
                 >

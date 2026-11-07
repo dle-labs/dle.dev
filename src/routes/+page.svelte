@@ -4,6 +4,7 @@
   import SkillsSection from '$lib/components/SkillsSection.svelte';
   import WorkExperienceSection from '$lib/components/WorkExperienceSection.svelte';
   import HomeAboutSection from '$lib/components/home/HomeAboutSection.svelte';
+  import HomeContactSection from '$lib/components/home/HomeContactSection.svelte';
   import HomeHeroSection from '$lib/components/home/HomeHeroSection.svelte';
 </script>
 
@@ -15,11 +16,12 @@
   />
 </svelte:head>
 
-<main class="relative isolate min-h-svh px-4 pt-32 pb-10 sm:px-6 sm:pt-36 lg:px-8">
+<main class="relative isolate min-h-svh px-4 pt-32 sm:px-6 sm:pt-36 lg:px-8">
   <HomeHeroSection />
   <HomeAboutSection />
   <SkillsSection />
   <WorkExperienceSection />
   <EducationSection />
   <CertificatesSection />
+  <HomeContactSection />
 </main>
