@@ -13,6 +13,7 @@
   import resume from '$lib/assets/resume/resume.json';
   import SectionIntro from '$lib/components/SectionIntro.svelte';
   import Typography from '$lib/components/Typography.svelte';
+  import ResumeTimeline from '$lib/components/resume/ResumeTimeline.svelte';
   import ResumeTimelineBulletList from '$lib/components/resume/ResumeTimelineBulletList.svelte';
   import ResumeTimelineEntry from '$lib/components/resume/ResumeTimelineEntry.svelte';
   import ResumeTimelineMedia from '$lib/components/resume/ResumeTimelineMedia.svelte';
@@ -55,12 +56,19 @@
         'Deepened architecture-level thinking around security, threat surfaces, and resilient web systems.'
       ]
     },
-    'CPSA® Advanced Level CLOUDINFRA|2026-09-15': {
+    'CPSA® Advanced Level CLOUDINFRA|2026-12-09': {
       image: cloud,
       summary:
         'Advanced architecture coursework focused on cloud infrastructure and modern platform concerns.',
       details: [
         'Strengthened the platform and infrastructure perspective behind scalable software architecture decisions.'
+      ]
+    },
+    'Kubernetes PaaS Cluster Design Guide|2026-08-24': {
+      image: kube,
+      summary: 'Internal ti&m training on designing Kubernetes clusters that run as a shared PaaS.',
+      details: [
+        'Covered how to separate teams on one cluster, where to put guardrails, and how to keep it manageable day to day.'
       ]
     },
     'Introduction to Quarkus|2026-06-15': {
@@ -70,7 +78,7 @@
         'Expanded backend platform familiarity beyond the frontend-heavy delivery work shown elsewhere in the portfolio.'
       ]
     },
-    'Kubernetes CKAD Certification|2026-05-15': {
+    'Kubernetes CKAD Certification|2026-12-20': {
       image: kube,
       summary:
         'Hands-on certification validating day-to-day Kubernetes application design and deployment skills.',
@@ -241,7 +249,7 @@
           />
 
           <div class="relative mt-8 lg:mt-10">
-            <div class="resume-timeline">
+            <ResumeTimeline>
               {#each group.entries as entry (entry.id)}
                 <ResumeTimelineEntry reversed={entry.isReversed} icon={Award}>
                   {#snippet media()}
@@ -312,7 +320,7 @@
                   </div>
                 </ResumeTimelineEntry>
               {/each}
-            </div>
+            </ResumeTimeline>
           </div>
         </section>
       {/each}

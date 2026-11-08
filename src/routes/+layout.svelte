@@ -13,6 +13,7 @@
   } from '$lib/animation/home-intro';
   import AmbientBackground from '$lib/components/AmbientBackground.svelte';
   import HaloNavbar from '$lib/components/HaloNavbar.svelte';
+  import SiteFooter from '$lib/components/SiteFooter.svelte';
   import { HomeIntroController, setHomeIntro } from '$lib/state/home-intro.svelte';
   import {
     type UiSettingsSnapshot,
@@ -238,4 +239,6 @@
   </div>
 
   {@render children()}
+
+  <SiteFooter />
 </div>

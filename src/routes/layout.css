@@ -331,6 +331,73 @@ html[data-intro-active='true'] [data-navbar-glow] {
     border: 1px solid color-mix(in oklab, var(--color-primary) 28%, transparent);
     background: color-mix(in oklab, var(--color-background) 88%, var(--color-primary) 12%);
     box-shadow: 0 0 0 0.45rem color-mix(in oklab, var(--color-background) 72%, transparent);
+    transition:
+      background-color 0.5s ease,
+      border-color 0.5s ease,
+      color 0.5s ease,
+      box-shadow 0.5s ease,
+      scale 0.5s cubic-bezier(0.34, 1.56, 0.64, 1);
+  }
+
+  /* Scroll-linked spine fill, driven by the `scrollTimeline` attachment. */
+  .resume-timeline-progress {
+    pointer-events: none;
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    left: 1rem;
+    width: 1px;
+  }
+
+  .resume-timeline-progress__bar {
+    position: absolute;
+    inset: 0;
+    transform: scaleY(0);
+    transform-origin: top;
+    background: linear-gradient(
+      to bottom,
+      color-mix(in oklab, var(--color-primary) 20%, transparent),
+      var(--color-primary)
+    );
+    box-shadow: 0 0 12px color-mix(in oklab, var(--color-primary) 55%, transparent);
+  }
+
+  .resume-timeline-progress__tip {
+    position: absolute;
+    top: 0;
+    left: 50%;
+    height: 0.6rem;
+    width: 0.6rem;
+    visibility: hidden;
+    opacity: 0;
+    border-radius: 9999px;
+    background: var(--color-primary);
+    box-shadow:
+      0 0 0 4px color-mix(in oklab, var(--color-primary) 18%, transparent),
+      0 0 22px 4px color-mix(in oklab, var(--color-primary) 55%, transparent);
+    transform: translate(-50%, -50%);
+  }
+
+  .resume-timeline-item.is-reached .resume-timeline-marker {
+    color: var(--color-primary-foreground);
+    border-color: var(--color-primary);
+    background: var(--color-primary);
+    box-shadow:
+      0 0 0 0.45rem color-mix(in oklab, var(--color-background) 72%, transparent),
+      0 0 24px 2px color-mix(in oklab, var(--color-primary) 45%, transparent);
+    scale: 1.12;
+  }
+
+  .resume-timeline-card {
+    transition:
+      border-color 0.4s ease,
+      box-shadow 0.4s ease,
+      translate 0.4s cubic-bezier(0.22, 1, 0.36, 1);
+  }
+
+  .resume-timeline-item.is-collapsed .resume-timeline-card:hover {
+    translate: 0 -2px;
+    border-color: color-mix(in oklab, var(--color-primary) 24%, transparent);
   }
 
   .resume-timeline-card {
@@ -373,7 +440,8 @@ html[data-intro-active='true'] [data-navbar-glow] {
       gap: 2rem;
     }
 
-    .resume-timeline::before {
+    .resume-timeline::before,
+    .resume-timeline-progress {
       left: 50%;
       transform: translateX(-0.5px);
     }

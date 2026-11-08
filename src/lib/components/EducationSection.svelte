@@ -7,6 +7,7 @@
   import resume from '$lib/assets/resume/resume.json';
   import SectionIntro from '$lib/components/SectionIntro.svelte';
   import Typography from '$lib/components/Typography.svelte';
+  import ResumeTimeline from '$lib/components/resume/ResumeTimeline.svelte';
   import ResumeTimelineBulletList from '$lib/components/resume/ResumeTimelineBulletList.svelte';
   import ResumeTimelineEntry from '$lib/components/resume/ResumeTimelineEntry.svelte';
   import ResumeTimelineMedia from '$lib/components/resume/ResumeTimelineMedia.svelte';
@@ -113,12 +114,12 @@
     <SectionIntro
       id="education"
       eyebrow="Academic path"
-      title="Education"
+      title="Where I learned"
       description="The academic track behind the way I work today, spanning economics, business, and software engineering."
     />
 
     <div class="relative mt-12 lg:mt-16">
-      <div class="resume-timeline">
+      <ResumeTimeline>
         {#each educationEntries as entry (entry.id)}
           <ResumeTimelineEntry reversed={entry.isReversed} icon={GraduationCap}>
             {#snippet media()}
@@ -177,7 +178,7 @@
             </div>
           </ResumeTimelineEntry>
         {/each}
-      </div>
+      </ResumeTimeline>
     </div>
   </div>
 </section>

@@ -154,24 +154,30 @@
   ],
   "certificates": [
     {
-      "name": "CPSA® Advanced Level Module WEBSEC",
-      "date": "2026-09-28",
-      "issuer": "iSAQB®"
+      "name": "Kubernetes CKAD Certification",
+      "date": "2026-12-20",
+      "issuer": "The Linux Foundation"
     },
     {
       "name": "CPSA® Advanced Level CLOUDINFRA",
-      "date": "2026-09-15",
+      "date": "2026-12-09",
       "issuer": "iSAQB®"
+    },
+    {
+      "name": "CPSA® Advanced Level Module WEBSEC",
+      "date": "2026-09-28",
+      "issuer": "iSAQB®",
+      "url": "https://tecnovy.com/download/e851a59302b862fc2e00.pdf"
+    },
+    {
+      "name": "Kubernetes PaaS Cluster Design Guide",
+      "date": "2026-08-24",
+      "issuer": "ti&m AG"
     },
     {
       "name": "Introduction to Quarkus",
       "date": "2026-06-15",
       "issuer": "ti&m AG"
-    },
-    {
-      "name": "Kubernetes CKAD Certification",
-      "date": "2026-05-15",
-      "issuer": "The Linux Foundation"
     },
     {
       "name": "Professional Scrum Master™ I Certification",
@@ -233,7 +239,10 @@
       "name": "Platform and Delivery",
       "keywords": [
         "Node.js",
+        "Quarkus",
+        "Camunda",
         "Docker (Compose)",
+        "Podman",
         "Kubernetes",
         "GitLab CI",
         "GitHub Actions",
