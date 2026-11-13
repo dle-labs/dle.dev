@@ -25,7 +25,7 @@ name: Setup Environment
 runs:
   steps:
     - name: Git Composite Checkout
-      uses: actions/checkout@v6
+      uses: actions/checkout@v7
       with:
         fetch-depth: ${{ inputs.fetch-depth }}
         ref: ${{ inputs.ref }}
