@@ -1,0 +1,13 @@
+# Git hooks managed by Lefthook — https://lefthook.dev/
+pre-commit:
+  parallel: true
+  jobs:
+    - name: eslint
+      glob: '*.{ts,svelte}'
+      run: pnpm exec eslint --fix {staged_files}
+      stage_fixed: true
+
+    - name: prettier
+      glob: '*.{json,css,yaml,yml,md,svx}'
+      run: pnpm exec prettier --write {staged_files}
+      stage_fixed: true
