@@ -1,0 +1,537 @@
+---
+title: 'High-Frequency WebSocket Updates in React Without Re-Renders'
+description:
+  'A 300ms price feed re-rendering your whole dashboard? You do not need Redux, Zustand, or Jotai to
+  fix it. React already ships with everything you need: refs, useSyncExternalStore, and a bit of
+  discipline about what belongs in React state.'
+publishedAt: '2026-04-23'
+author: 'Daniel Einars'
+---
+
+<script>
+  import { ArticleCallout, ArticleWindow } from '$lib/components/blog';
+</script>
+
+I was building a small price-watcher dashboard that subscribes to a WebSocket and gets a batch of
+stock-price updates roughly every 300 milliseconds. The first version worked — and brought my
+devtools to its knees. Every tick re-rendered the entire view, the add-symbol dialog, and anything
+else that happened to sit under the context provider.
+
+The interesting bit is not _"use a state manager"_. The interesting bit is that React already has
+everything you need to fix this, and the fix boils down to one idea:
+
+<ArticleCallout variant="note" title="The core idea">
+  Prices are external, mutable state. React does not need to own them. It only needs to know where
+  to read them from and when to look again.
+</ArticleCallout>
+
+Full source for the finished version is on
+[GitHub](https://github.com/polaroidkidd/websockets-price-watcher/tree/gold-standard).
+
+## 1. The naive version, and why it hurts
+
+Here is the shape of the original code. A provider exposed the raw `WebSocket` ref and a boolean
+`isConnected`. Each consumer reached into the socket directly:
+
+<ArticleWindow title="The naive consumer">
+
+```tsx
+export const PriceWatcherView = () => {
+  const { isConnected, socket } = usePriceWatcher();
+  const preRef = useRef<HTMLPreElement>(null);
+
+  const update = (event: MessageEvent) => {
+    if (preRef.current) {
+      preRef.current.textContent = event.data;
+    }
+  };
+
+  useEffect(() => {
+    if (isConnected) {
+      socket.current?.addEventListener('message', update);
+    }
+  }, [isConnected, socket]);
+
+  return (
+    <div>
+      {isConnected ? <h1>Connected</h1> : <h1>NOT</h1>}
+      <pre ref={preRef}></pre>
+    </div>
+  );
+};
+```
+
+</ArticleWindow>
+
+There are three problems hiding here.
+
+1. **The listener leaks.** `addEventListener` is never paired with a `removeEventListener`, and the
+   effect re-runs on every `isConnected` flip or `socket` identity change. Each run stacks another
+   listener on the same socket.
+2. **The abstraction leaks.** Every consumer now knows about `MessageEvent`, `event.data`, JSON
+   parsing, and the server's wire format. Change the protocol and every component has to change.
+3. **The scaling story is bad.** If I add a second row to show a second symbol, I need a second ad
+   hoc effect. If I want the prices to live in React state instead of DOM strings, every tick now
+   re-renders the whole tree.
+
+The instinct at this point is usually _"put the prices in context"_. Let's see why that's worse.
+
+## 2. Why React Context is the wrong hammer
+
+React Context re-renders **every consumer** whenever the provided value changes identity. That's
+fine for rarely-changing values like theme or auth. It is catastrophic for a 300ms firehose.
+
+<ArticleCallout variant="warn" title="Context is a broadcast, not a selector">
+  There is no way to subscribe to _part_ of a context value. If the provider hands you a new object
+  — even if only one field inside it changed — every consumer re-runs.
+</ArticleCallout>
+
+Libraries like Zustand or Jotai solve this with selector-based subscriptions. But we don't need a
+library for this. React shipped the primitive for it in 18: `useSyncExternalStore`.
+
+## 3. The plan
+
+We're going to restructure the provider so that:
+
+- Prices live in a plain `Map` held inside a `useRef` — not in React state.
+- Each symbol has its own set of listeners. When a price for `AAPL` ticks, only components that
+  subscribed to `AAPL` are notified.
+- Context exposes a **stable** API object (`subscribe`, `getSnapshot`, `watch`, `unwatch`). Because
+  its identity never changes after mount, consumers of the API never re-render from context alone.
+- Connection status (`isConnected`, `supportedSymbols`) lives in a **separate** context. Flipping
+  connection state doesn't touch components that only care about the API.
+
+This is the "external store" pattern. The provider becomes a small event bus with a cache.
+
+## 4. The provider
+
+Here's the shape, annotated.
+
+<ArticleWindow title="price-watcher-provider.tsx">
+
+```tsx
+export const PriceWatcherProvider = ({ children, url }: Props) => {
+  // External store. Mutating a ref does NOT trigger a render.
+  const pricesRef = useRef<Map<string, number>>(new Map());
+
+  // Per-symbol listener sets. O(1) add/delete, automatic dedupe.
+  const listenersRef = useRef<Map<string, Set<() => void>>>(new Map());
+
+  // Rare: set once on the first "connected" message from the server.
+  const [supportedSymbols, setSupportedSymbols] = useState<string[]>([]);
+
+  // Hot path. Runs on every WebSocket message (~300ms).
+  // Must never setState for price updates.
+  const handleMessage = useCallback((raw: string) => {
+    const msg = JSON.parse(raw);
+    if (msg.event === 'connected') {
+      setSupportedSymbols(msg.supportedSymbols ?? []);
+      return;
+    }
+    if (msg.event === 'stocks-update') {
+      for (const [symbol, price] of Object.entries(msg.stocks)) {
+        pricesRef.current.set(symbol, price as number);
+        // Notify ONLY the listeners that care about this symbol.
+        listenersRef.current.get(symbol)?.forEach((cb) => cb());
+      }
+    }
+  }, []);
+
+  const { isConnected, send } = useWebSocket({ url, onMessage: handleMessage });
+
+  // Stable API. Memoized against [send], and `send` is itself a
+  // stable useCallback, so in practice this object never changes.
+  const api = useMemo(
+    () => ({
+      subscribe(symbol: string, listener: () => void) {
+        let set = listenersRef.current.get(symbol);
+        if (!set) {
+          set = new Set();
+          listenersRef.current.set(symbol, set);
+        }
+        set.add(listener);
+        return () => {
+          set!.delete(listener);
+          if (set!.size === 0) listenersRef.current.delete(symbol);
+        };
+      },
+      getSnapshot: (symbol: string) => pricesRef.current.get(symbol),
+      watch: (symbols: string[]) => send({ event: 'subscribe', stocks: symbols }),
+      unwatch: (symbols: string[]) => send({ event: 'unsubscribe', stocks: symbols })
+    }),
+    [send]
+  );
+
+  const status = useMemo(
+    () => ({ isConnected, supportedSymbols }),
+    [isConnected, supportedSymbols]
+  );
+
+  return (
+    <PriceWatcherApiContext value={api}>
+      <PriceWatcherStatusContext value={status}>{children}</PriceWatcherStatusContext>
+    </PriceWatcherApiContext>
+  );
+};
+```
+
+</ArticleWindow>
+
+A few things are worth calling out:
+
+- **`pricesRef` is the source of truth.** Writing to it is a plain Map mutation. No render. No
+  virtual DOM. Nothing.
+- **`listenersRef` is indexed by symbol.** A component watching `AAPL` is not woken when `GOOG`
+  ticks. With a dozen symbols and one subscriber per symbol, each tick fires exactly the subscribers
+  it should — nothing more.
+- **`handleMessage` is stabilized with `useCallback([])`.** If its identity changed every render,
+  the `useWebSocket` effect would re-attach the message handler every render too, which would be
+  silly.
+- **Two contexts, not one.** The API context holds a stable object (function references only).
+  Consumers that only use the API never re-render from context — the value identity never changes.
+
+## 5. The consumer API: four small hooks
+
+A good external-store pattern deserves a thin, opinionated hook layer on top. We want callers to
+never touch `useContext` or `useSyncExternalStore` directly — they should just ask for what they
+want.
+
+Here is the full hooks file. Four hooks, each with a single job.
+
+<ArticleWindow title="hooks/use-price-watcher.ts">
+
+```ts
+import { useCallback, useContext, useSyncExternalStore } from 'react';
+import {
+  PriceWatcherApiContext,
+  PriceWatcherStatusContext,
+  type Price
+} from '../context/price-watcher-context';
+
+export const usePriceWatcherApi = () => {
+  const ctx = useContext(PriceWatcherApiContext);
+  if (!ctx) {
+    throw Error('usePriceWatcherApi used outside of PriceWatcherProvider');
+  }
+  return ctx;
+};
+
+export const usePriceWatcherStatus = () => {
+  const ctx = useContext(PriceWatcherStatusContext);
+  if (!ctx) {
+    throw Error('usePriceWatcherStatus used outside of PriceWatcherProvider');
+  }
+  return ctx;
+};
+
+export const useWatchedSymbol = (symbol: string): Price | undefined => {
+  const { subscribe, getSnapshot } = usePriceWatcherApi();
+
+  const sub = useCallback((cb: () => void) => subscribe(symbol, cb), [subscribe, symbol]);
+  const snap = useCallback(() => getSnapshot(symbol), [getSnapshot, symbol]);
+
+  return useSyncExternalStore(sub, snap, snap);
+};
+
+export const useAvailableSymbols = (): string[] => usePriceWatcherStatus().supportedSymbols;
+```
+
+</ArticleWindow>
+
+Let's walk through them.
+
+### 5.1 `usePriceWatcherApi` — the imperative handle
+
+```ts
+export const usePriceWatcherApi = () => {
+  const ctx = useContext(PriceWatcherApiContext);
+  if (!ctx) {
+    throw Error('usePriceWatcherApi used outside of PriceWatcherProvider');
+  }
+  return ctx;
+};
+```
+
+This is the hook you use when you want to _do_ something to the stream: subscribe a symbol, tell the
+server to stream new symbols, or read the current price synchronously. It returns the stable API
+object from the provider: `{ subscribe, getSnapshot, watch, unwatch }`.
+
+Two points worth internalizing:
+
+- **It does not read state.** The value returned never changes identity after mount, so calling this
+  hook alone will never cause your component to re-render. A component that only uses this hook is
+  effectively render-free with respect to the price stream.
+- **The throw is a guardrail, not a feature.** A missing provider is a programmer bug, not a runtime
+  condition to handle. Throwing eagerly means the error shows up the first time you mount the
+  consumer, not three hooks deep when someone calls `subscribe`.
+
+Typical usage:
+
+```tsx
+const AddPriceWatcherDialog = ({ picked }: { picked: string[] }) => {
+  const { watch } = usePriceWatcherApi();
+  return <button onClick={() => watch(picked)}>Watch</button>;
+};
+```
+
+Clicking the button never re-renders the dialog. We're not storing anything in React state — we're
+just telling the server to start streaming.
+
+### 5.2 `usePriceWatcherStatus` — the rare-change slice
+
+```ts
+export const usePriceWatcherStatus = () => {
+  const ctx = useContext(PriceWatcherStatusContext);
+  if (!ctx) {
+    throw Error('usePriceWatcherStatus used outside of PriceWatcherProvider');
+  }
+  return ctx;
+};
+```
+
+This is the hook for anything that flips only on connection events or protocol metadata:
+`{ isConnected, supportedSymbols }`. Components that use this hook re-render when the socket opens
+or closes, and when the server announces its supported-symbols list — which, in practice, is _once_.
+
+Splitting status into its own context is the load-bearing decision that makes the whole design work.
+If we'd stuffed `isConnected` into the same context as the API, any connection blip would re-render
+every API consumer, even pure-imperative ones like the dialog above.
+
+Typical usage:
+
+```tsx
+const ConnectionBadge = () => {
+  const { isConnected } = usePriceWatcherStatus();
+  return <span>{isConnected ? 'live' : 'offline'}</span>;
+};
+```
+
+### 5.3 `useWatchedSymbol` — the live-price subscription
+
+```ts
+export const useWatchedSymbol = (symbol: string): Price | undefined => {
+  const { subscribe, getSnapshot } = usePriceWatcherApi();
+
+  const sub = useCallback((cb: () => void) => subscribe(symbol, cb), [subscribe, symbol]);
+  const snap = useCallback(() => getSnapshot(symbol), [getSnapshot, symbol]);
+
+  return useSyncExternalStore(sub, snap, snap);
+};
+```
+
+This is the one that actually produces React renders in lockstep with the WebSocket. It wires the
+provider's `subscribe` / `getSnapshot` pair into React's `useSyncExternalStore`, which is the
+official React 18+ primitive for integrating external mutable stores.
+
+The important bits:
+
+- **`sub` and `snap` are bound to a specific `symbol`.** Each subscriber pulls only its own slice. A
+  component calling `useWatchedSymbol('AAPL')` is not woken when `GOOG` ticks — the listener set
+  inside the provider is keyed by symbol, and our `sub` registers only in that set.
+- **The `useCallback` wrappers matter.** `useSyncExternalStore` compares its arguments by reference.
+  If `sub` changed identity every render, React would unsubscribe and resubscribe on every render,
+  which would be both pointless and slightly broken (you'd miss updates that land between the two).
+  Memoizing against `[subscribe, symbol]` — both stable — means we subscribe exactly once per
+  symbol.
+- **The third argument is for SSR.**
+  `useSyncExternalStore(subscribe, getSnapshot, getServerSnapshot)` — we reuse `snap` because
+  there's nothing special to return on the server; the Map is just empty. If you were
+  server-rendering with pre-seeded prices, this is where you'd hand them in.
+- **The return type is `Price | undefined`.** A symbol that has never ticked returns `undefined`.
+  The caller can render a dash and move on. Avoid inventing a sentinel number.
+
+Typical usage:
+
+```tsx
+const PriceLabel = ({ symbol }: { symbol: string }) => {
+  const price = useWatchedSymbol(symbol);
+  return <span>{price !== undefined ? price.toFixed(2) : '—'}</span>;
+};
+```
+
+`PriceLabel` re-renders exactly as often as its symbol ticks, and not a frame more.
+
+<ArticleCallout variant="tip" title="When even this is too much">
+  If your profile shows that re-rendering the `PriceLabel` itself is a problem (e.g. hundreds of
+  symbols at sub-100ms cadence), you can skip `useWatchedSymbol` entirely and use
+  `usePriceWatcherApi` directly — subscribe inside a `useEffect` and write `textContent` to a ref.
+  The imperative version is shown in the next section. Don't reach for it preemptively, though:
+  `useSyncExternalStore` handles tearing and concurrent rendering correctly, and imperative writes
+  do not.
+</ArticleCallout>
+
+### 5.4 `useAvailableSymbols` — the named selector
+
+```ts
+export const useAvailableSymbols = (): string[] => usePriceWatcherStatus().supportedSymbols;
+```
+
+A one-liner, but it earns its place. Three reasons:
+
+1. **It names the intent.** `useAvailableSymbols()` reads better than
+   `usePriceWatcherStatus().supportedSymbols` at the call site, and it isolates the caller from the
+   shape of the status context.
+2. **It's a refactor anchor.** If `supportedSymbols` later moves to its own context, or gets derived
+   from something else (e.g. filtered by user permissions), only this hook changes. Callers keep
+   working.
+3. **It's the canonical place to add logic.** Want to sort, dedupe, or filter the list? Do it here,
+   once, instead of at every call site.
+
+Typical usage:
+
+```tsx
+const SymbolPicker = () => {
+  const symbols = useAvailableSymbols();
+  return (
+    <select>
+      {symbols.map((s) => (
+        <option key={s} value={s}>
+          {s}
+        </option>
+      ))}
+    </select>
+  );
+};
+```
+
+`SymbolPicker` re-renders only when the symbol list actually changes — which is essentially once,
+when the server's `connected` message arrives.
+
+## 6. The nuclear option: skip React entirely
+
+React's reconciler is fast, but it is not free. For a text node inside a `<span>` that changes ten
+times a second, the cheapest possible update is the one that bypasses React altogether. If you're
+rendering a price that is **only text**, you can write it straight into the DOM using
+`usePriceWatcherApi` directly:
+
+<ArticleWindow title="WatchedSymbolRow — zero React work per tick">
+
+```tsx
+const format = (price: number | undefined) => (price !== undefined ? price.toFixed(2) : '—');
+
+const WatchedSymbolRow = ({ symbol }: { symbol: string }) => {
+  const { subscribe, getSnapshot } = usePriceWatcherApi();
+  const priceRef = useRef<HTMLSpanElement>(null);
+
+  useEffect(() => {
+    const render = () => {
+      if (priceRef.current) {
+        priceRef.current.textContent = format(getSnapshot(symbol));
+      }
+    };
+    render(); // paint once so we don't show "—" until the next tick
+    return subscribe(symbol, render); // subscribe returns its own cleanup
+  }, [subscribe, getSnapshot, symbol]);
+
+  return (
+    <pre>
+      {symbol}: <span ref={priceRef}>{format(getSnapshot(symbol))}</span>
+    </pre>
+  );
+};
+```
+
+</ArticleWindow>
+
+What happens on a price tick now:
+
+1. `handleMessage` parses the message.
+2. It writes to `pricesRef` (a Map set — a few pointer operations).
+3. It calls the listener set for the affected symbol.
+4. The listener does `priceRef.current.textContent = '123.45'`.
+
+That's it. No component re-executes. No virtual DOM diff. No commit phase. The browser invalidates
+one text node. You can sustain hundreds of ticks a second like this without a visible cost.
+
+<ArticleCallout variant="warn" title="When NOT to do this">
+  You are writing to the DOM imperatively, which means you own that text node. If the parent
+  re-renders for some unrelated reason, React will overwrite your value with whatever it renders as
+  the child of `<span>`. Mitigate this by seeding the initial child from `getSnapshot(symbol)` (as
+  above) so React's initial render matches what the imperative update would have written.
+
+Only reach for this when:
+
+  <ul>
+    <li>The thing being updated is plain text (or a small, simple attribute like <code>style.width</code>).</li>
+    <li>Update frequency is high enough that React's render cost actually matters.</li>
+    <li>You've already tried <code>useSyncExternalStore</code> and profiled it.</li>
+  </ul>
+</ArticleCallout>
+
+For anything more complex — a conditional className, a nested component, anything that the JSX tree
+would express naturally — stick with `useWatchedSymbol` / `useSyncExternalStore`. The renderer was
+designed for exactly that job.
+
+## 7. Putting it together
+
+The dashboard view itself holds no per-tick state. It subscribes to connection status, tells the
+server which symbols to stream, and renders a row per symbol. Each row owns its own subscription.
+
+<ArticleWindow title="PriceWatcherView">
+
+```tsx
+const DEFAULT_SYMBOLS = ['WF', 'DVU'] as const;
+
+export const PriceWatcherView = () => {
+  const { isConnected } = usePriceWatcherStatus();
+  const { watch, unwatch } = usePriceWatcherApi();
+
+  useEffect(() => {
+    if (!isConnected) return;
+    const symbols = [...DEFAULT_SYMBOLS];
+    watch(symbols);
+    return () => unwatch(symbols);
+  }, [isConnected, watch, unwatch]);
+
+  return (
+    <div>
+      {isConnected ? <h1>Connected</h1> : <h1>NOT</h1>}
+      {DEFAULT_SYMBOLS.map((s) => (
+        <WatchedSymbolRow key={s} symbol={s} />
+      ))}
+    </div>
+  );
+};
+```
+
+</ArticleWindow>
+
+`PriceWatcherView` renders twice in its lifetime: once on mount, once when `isConnected` flips. The
+rows re-render never (imperative version) or exactly on their own symbol's tick (`useWatchedSymbol`
+version). Everything else — the live text updates — is happening outside React or in a tightly
+scoped corner of it.
+
+## 8. Verifying it
+
+Open the React Profiler with "Highlight updates when components render" on, and connect. You should
+see:
+
+- A highlight on `PriceWatcherView` exactly once, when `isConnected` flips to `true`.
+- No highlights on `WatchedSymbolRow` while prices stream in (imperative version).
+- The text inside the `<span>` updates anyway, at 300ms cadence.
+
+If you see `WatchedSymbolRow` highlighting on every tick, you're probably using the
+`useSyncExternalStore` version — which is also correct, just not as aggressively optimized. Both are
+miles ahead of the naive code.
+
+## 9. Takeaways
+
+- **Not every piece of mutable state belongs in React state.** If a value changes faster than the
+  user can perceive, it's a stream — treat it like one.
+- **Context is a broadcast primitive.** Put _stable references_ in it (API objects), not values that
+  change per frame. Split contexts by change frequency.
+- **`useSyncExternalStore` is the right tool 95% of the time.** It's ergonomic, integrates with
+  concurrent rendering, and gives you per-symbol re-renders for free.
+- **Imperative DOM updates are fine for leaf text nodes.** They're the cheapest possible update.
+  Just make sure your JSX seeds the same value so the initial render agrees with what you'll write
+  imperatively.
+- **Ship the hook layer your domain deserves.** `useWatchedSymbol(symbol)` and
+  `useAvailableSymbols()` read at the call site exactly like what they do. That's worth more than it
+  looks.
+
+The final code (provider, hooks, and a worked example) is on the
+[gold-standard branch](https://github.com/polaroidkidd/websockets-price-watcher/tree/gold-standard)
+of the repo. The provider sits at
+[`client/src/services/contexts/price-watcher/`](https://github.com/polaroidkidd/websockets-price-watcher/tree/gold-standard/client/src/services/contexts/price-watcher)
+and the view that consumes it is at
+[`client/src/views/price-watcher-dashboard-view/`](https://github.com/polaroidkidd/websockets-price-watcher/tree/gold-standard/client/src/views/price-watcher-dashboard-view).
