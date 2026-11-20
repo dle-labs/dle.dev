@@ -86,4 +86,4 @@ GitHub Actions deploy Pages builds through Wrangler via `cloudflare/wrangler-act
 
 - The project forces Svelte runes mode for app code.
 - mdsvex is enabled for `.svx` content.
-- Pre-commit hooks are managed with Husky and `lint-staged`.
+- Pre-commit hooks are managed with [Lefthook](https://lefthook.dev/) (`lefthook.yml`).

@@ -7,7 +7,7 @@
     "changeset": "changeset",
     "dev": "vite dev --host --force",
     "build": "vite build",
-    "prepare": "husky",
+    "prepare": "lefthook install",
     "check": "svelte-kit sync && svelte-check --tsconfig ./tsconfig.json",
     "check:watch": "svelte-kit sync && svelte-check --tsconfig ./tsconfig.json --watch",
     "lint": "prettier --check . && eslint .",
@@ -18,11 +18,6 @@
     "bnd": "pnpm build && pnpm cf:prod",
     "release": "pnpm changeset version && pnpm install --no-frozen-lockfile && pnpm build",
     "version": "changeset version"
-  },
-  "lint-staged": {
-    "*.{ts,svelte}": "eslint --fix",
-    "*.{json,css,yaml}": "prettier --write",
-    "*.{md,svx}": "prettier --write"
   },
   "dependencies": {
     "gsap": "^3.15.1"
@@ -51,9 +46,8 @@
     "eslint-plugin-simple-import-sort": "^13.0.0",
     "eslint-plugin-svelte": "^3.24.1",
     "globals": "^17.14.0",
-    "husky": "^9.1.7",
     "jsrepo": "^3.8.3",
-    "lint-staged": "^16.4.0",
+    "lefthook": "^2.2.2",
     "mdsvex": "^0.12.8",
     "prettier": "^3.9.10",
     "prettier-plugin-svelte": "^3.5.2",
