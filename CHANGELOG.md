@@ -1,5 +1,19 @@
 # Changelog
 
+## 2.4.0
+
+### Minor Changes
+
+- b5b7a5f: Extract shared section intro and resume timeline components so the home page sections reuse a smaller, more consistent UI structure with less duplicated Svelte markup.
+- 36a8f47: Rework the home page into one continuous story: a static hero opener, the about section directly after it, compact skills, and new section titles. Work experience entries are now collapsible, every timeline fills in as you scroll, and the page ends with a contact section and a small footer.
+- b5b7a5f: Introduce a reusable Typography system for headings, paragraphs, spans, and rich prose wrappers so text styling stays more consistent across the home page, navigation, and blog content.
+
+### Patch Changes
+
+- 36a8f47: Sync the certificates timeline with the latest CV: mark the WEBSEC and Quarkus trainings as completed, reschedule the upcoming CLOUDINFRA and CKAD certifications, and add the Kubernetes PaaS Cluster Design Guide training.
+- b5b7a5f: Rename the GitHub deployment environments to Production, Staging, and Previews while keeping staging and branch previews on the `dle-dev-staging` Cloudflare Pages project without duplicate Cloudflare deployment records in the GitHub UI.
+- 6b8f139: Replace Husky and lint-staged with Lefthook for pre-commit hooks, keeping staged-file ESLint and Prettier fixes while removing two dev dependencies and their transitive packages.
+
 ## 2.3.0
 
 ### Minor Changes
